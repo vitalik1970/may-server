@@ -1,15 +1,13 @@
-const http = require('http');
-const url = require('url');
-const fs = require('fs');
-const path = require('path');
-const querystring = require('querystring');
-
-// Модуль для обработки POST запросов
-const bodyParser = require('body-parser');
 const express = require('express');
+const cors = require('cors');  // Добавляем CORS
+const fs = require('fs');
+
 const app = express();
 
-// Настройка парсинга JSON
+// Включаем CORS для всех доменов (это разрешит запросы с других сайтов)
+app.use(cors());
+
+// Для обработки JSON в теле запроса
 app.use(express.json());
 
 // Обработка POST запроса с сообщением
@@ -31,3 +29,4 @@ app.post('/send-message', (req, res) => {
 app.listen(8080, () => {
     console.log('Server is listening on port 8080');
 });
+
