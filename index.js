@@ -10,6 +10,28 @@ app.use(cors());
 // Для обработки JSON в теле запроса
 app.use(express.json());
 
+// Обработка GET запроса на корень
+app.get('/', (req, res) => {
+    // Читаем файл с сообщениями
+    fs.readFile('messages.txt', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading messages file:', err);
+            return res.status(500).send('Internal Server Error');
+        }
+
+        // Отправляем все сообщения как HTML
+        const messages = data.split('\n').map(message => `<p>${message}</p>`).join('');
+        res.send(`
+            <html>
+                <body>
+                    <h1>Messages</h1>
+                    ${messages}
+                </body>
+            </html>
+        `);
+    });
+});
+
 // Обработка POST запроса с сообщением
 app.post('/send-message', (req, res) => {
     const message = req.body.message; // Получаем сообщение из тела запроса
