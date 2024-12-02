@@ -1,49 +1,43 @@
 const express = require('express');
-const cors = require('cors');  // Добавляем CORS
+const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 
-// Включаем CORS для всех доменов (это разрешит запросы с других сайтов)
+// Включаем CORS
 app.use(cors());
 
 // Для обработки JSON в теле запроса
 app.use(express.json());
 
-// Обработка GET запроса на корень
-app.get('/', (req, res) => {
-    // Читаем файл с сообщениями
-    fs.readFile('messages.txt', 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading messages file:', err);
-            return res.status(500).send('Internal Server Error');
-        }
-
-        // Отправляем все сообщения как HTML
-        const messages = data.split('\n').map(message => `<p>${message}</p>`).join('');
-        res.send(`
-            <html>
-                <body>
-                    <h1>Messages</h1>
-                    ${messages}
-                </body>
-            </html>
-        `);
-    });
-});
+// Указываем Express, где искать статические файлы
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
 
 // Обработка POST запроса с сообщением
 app.post('/send-message', (req, res) => {
-    const message = req.body.message; // Получаем сообщение из тела запроса
-    console.log('Received message:', message); // Выводим его на сервер
+    const message = req.body.message;
+    console.log('Received message:', message);
 
-    // Сохраняем сообщение в файл
     fs.appendFile('messages.txt', `${new Date().toISOString()} - ${message}\n`, (err) => {
         if (err) {
             console.error('Error saving message:', err);
             return res.status(500).json({ error: 'Internal Server Error' });
         }
         res.status(200).json({ success: 'Message received and saved' });
+    });
+});
+
+// Новый эндпоинт для получения сообщений
+app.get('/get-messages', (req, res) => {
+    fs.readFile('messages.txt', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading messages:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+        const messages = data.split('\n').filter(line => line.trim() !== '');
+        res.status(200).json({ messages });
     });
 });
 
