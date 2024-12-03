@@ -26,15 +26,35 @@ app.post('/send-message', (req, res) => {
     });
 });
 
+// Маршрут для получения сообщений
+app.get('/get-messages', (req, res) => {
+    fs.readFile('messages.txt', 'utf-8', (err, data) => {
+        if (err) {
+            console.error('Error reading messages file:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        // Разбиваем файл на массив строк и отправляем
+        const messages = data.split('\n').filter(Boolean);
+        res.status(200).json({ messages });
+    });
+});
+
 // Обслуживание статического приложения Next.js
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Перенаправление всех запросов к Next.js приложению
+// Перенаправление всех запросов к Next.js приложению, кроме API
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    const apiRoutes = ['/send-message', '/get-messages'];
+    if (!apiRoutes.includes(req.path)) {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    } else {
+        res.status(404).json({ error: 'API route not found' });
+    }
 });
 
 // Запуск сервера
 app.listen(8080, () => {
     console.log('Server is listening on port 8080');
 });
+
