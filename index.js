@@ -13,11 +13,16 @@ app.use(express.json());
 
 // Маршрут для отправки сообщений
 app.post('/send-message', (req, res) => {
-    const message = req.body.message;
-    console.log('Received message:', message);
+    const { username, message } = req.body;
+    if (!username || !message) {
+        return res.status(400).json({ error: 'Name and message are required.' });
+    }
+
+    const date = new Date().toISOString().split('T')[0]; // Форматируем дату как YYYY-MM-DD
+    const logEntry = `${date} - ${username}: ${message}\n`;;
 
     // Сохраняем сообщение в файл
-    fs.appendFile('messages.txt', `${new Date().toISOString()} - ${message}\n`, (err) => {
+ fs.appendFile('messages.txt', logEntry, (err) => {
         if (err) {
             console.error('Error saving message:', err);
             return res.status(500).json({ error: 'Internal Server Error' });
@@ -25,7 +30,6 @@ app.post('/send-message', (req, res) => {
         res.status(200).json({ success: 'Message received and saved' });
     });
 });
-
 // Маршрут для получения сообщений
 app.get('/get-messages', (req, res) => {
     fs.readFile('messages.txt', 'utf-8', (err, data) => {
@@ -33,9 +37,15 @@ app.get('/get-messages', (req, res) => {
             console.error('Error reading messages file:', err);
             return res.status(500).json({ error: 'Internal Server Error' });
         }
+ const messages = data
+            .trim()
+            .split('\n')
+            .map((line) => {
+                const [dateAndName, message] = line.split(': ');
+                const [date, username] = dateAndName.split(' - ');
+                return { date, username, message };
+            });
 
-        // Разбиваем файл на массив строк и отправляем
-        const messages = data.split('\n').filter(Boolean);
         res.status(200).json({ messages });
     });
 });
